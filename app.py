@@ -1,8 +1,6 @@
 import streamlit as st
+from google import genai
 
-# =========================
-# 页面基础设置
-# =========================
 st.set_page_config(
     page_title="Shopee MY Listing Optimizer",
     page_icon="✨",
@@ -10,48 +8,48 @@ st.set_page_config(
 )
 
 # =========================
-# 页面样式
+# Gemini
 # =========================
+
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+
+# =========================
+# CSS
+# =========================
+
 st.markdown("""
 <style>
 
-/* 页面背景 */
 .stApp {
     background-color: #F7F4EC;
 }
 
-/* 主页面最大宽度 */
 .block-container {
     max-width: 1400px;
     padding-top: 2rem;
     padding-bottom: 3rem;
 }
 
-/* 顶部品牌 */
 .brand {
     font-size: 14px;
     letter-spacing: 2px;
     color: #315F50;
     font-weight: 600;
-    margin-bottom: 5px;
 }
 
-/* 主标题 */
 .main-title {
     font-size: 42px;
     font-weight: 800;
     color: #174C3C;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
-/* 副标题 */
 .subtitle {
     color: #6E746F;
     font-size: 16px;
     margin-bottom: 25px;
 }
 
-/* 顶部横幅 */
 .hero {
     background: #FFF0C8;
     border: 3px solid #245C4B;
@@ -59,17 +57,15 @@ st.markdown("""
     padding: 35px 30px;
     text-align: center;
     margin-bottom: 30px;
-    box-shadow: 0px 8px 0px rgba(36, 92, 75, 0.10);
+    box-shadow: 0px 8px 0px rgba(36,92,75,0.10);
 }
 
 .hero-title {
     color: #174C3C;
     font-size: 38px;
     font-weight: 800;
-    margin: 0;
 }
 
-/* 区域标题 */
 .section-title {
     font-size: 23px;
     font-weight: 750;
@@ -77,25 +73,18 @@ st.markdown("""
     margin-bottom: 15px;
 }
 
-/* 输出区域 */
 .output-box {
-    background: #FFFFFF;
+    background: white;
     border: 1px solid #E2DED4;
     border-radius: 18px;
-    padding: 22px;
-    min-height: 550px;
+    padding: 25px;
+    min-height: 600px;
 }
 
-/* 等待生成状态 */
 .empty-result {
     text-align: center;
-    padding-top: 150px;
+    padding-top: 180px;
     color: #7C827E;
-}
-
-.empty-icon {
-    font-size: 45px;
-    margin-bottom: 12px;
 }
 
 .empty-title {
@@ -104,7 +93,6 @@ st.markdown("""
     color: #315F50;
 }
 
-/* 按钮 */
 .stButton > button {
     width: 100%;
     border-radius: 12px;
@@ -118,25 +106,17 @@ st.markdown("""
 .stButton > button:hover {
     background-color: #32745D;
     color: white;
-    border: none;
-}
-
-/* 输入框圆角 */
-.stTextInput input,
-.stTextArea textarea {
-    border-radius: 10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-
 # =========================
-# 顶部
+# HEADER
 # =========================
 
 st.markdown(
-    '<div class="brand">MY AI COMMERCE · MALAYSIA</div>',
+    '<div class="brand">AI COMMERCE · MALAYSIA</div>',
     unsafe_allow_html=True
 )
 
@@ -146,29 +126,23 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">中文输入，一键生成自然、清晰的英文商品内容</div>',
+    '<div class="subtitle">中文输入，快速生成适合马来西亚市场的英文商品内容</div>',
     unsafe_allow_html=True
 )
 
 st.markdown("""
 <div class="hero">
-    <div class="hero-title">
-        AI 商品上架助手 ✨
-    </div>
+<div class="hero-title">
+AI 商品上架助手 ✨
+</div>
 </div>
 """, unsafe_allow_html=True)
 
-
 # =========================
-# 左右两栏
+# 页面布局
 # =========================
 
 left, right = st.columns([1, 1.1], gap="large")
-
-
-# =========================
-# 左侧：产品信息
-# =========================
 
 with left:
 
@@ -179,33 +153,36 @@ with left:
 
     product_title = st.text_input(
         "中文商品标题 *",
-        placeholder="例如：桌面手机充电线电源线整理收纳盒"
+        placeholder="直接复制1688商品标题"
     )
 
     product_info = st.text_area(
         "中文产品描述 / 属性 *",
         placeholder="""例如：
 
-材质：PP
-颜色：奶油白
-尺寸：小号 / 大号
-用途：桌面电线收纳
-特点：防尘、隐藏插排、多孔出线""",
-        height=190
+产品名称：
+材质：
+尺寸：
+颜色：
+功能：
+包装数量：
+适用场景：
+其他卖点：""",
+        height=220
     )
 
     store_template = st.text_area(
         "英文店铺基础模板",
         value="""✨ WELCOME TO OUR STORE ✨
 
-Discover practical and stylish products designed to make everyday life easier, tidier, and more comfortable.
+Discover practical and stylish products designed to make everyday life easier.
 
 🌿 Thoughtful Designs
 🌿 Quality You Can Trust
 🌿 Style for Every Space
 
 Thank you for supporting our store.""",
-        height=190
+        height=180
     )
 
     platform = st.selectbox(
@@ -216,7 +193,7 @@ Thank you for supporting our store.""",
         ]
     )
 
-    style = st.selectbox(
+    listing_style = st.selectbox(
         "Listing 风格",
         [
             "SEO关键词优先",
@@ -226,9 +203,10 @@ Thank you for supporting our store.""",
     )
 
     uploaded_images = st.file_uploader(
-        "上传商品图片（后续加入AI图片英文化）",
+        "上传商品图片",
         type=["jpg", "jpeg", "png", "webp"],
-        accept_multiple_files=True
+        accept_multiple_files=True,
+        help="图片AI处理功能下一阶段加入"
     )
 
     generate = st.button(
@@ -238,7 +216,7 @@ Thank you for supporting our store.""",
 
 
 # =========================
-# 右侧：优化结果
+# 右侧
 # =========================
 
 with right:
@@ -253,13 +231,13 @@ with right:
         st.markdown("""
         <div class="output-box">
             <div class="empty-result">
-                <div class="empty-icon">✦</div>
+                <div style="font-size:45px;">✦</div>
                 <div class="empty-title">
-                    准备好优化您的 Listing
+                准备好优化您的 Listing
                 </div>
                 <p>
-                    填写左侧产品信息，AI 将生成英文标题、
-                    关键词、卖点与完整商品描述。
+                填写左侧商品信息，AI 将生成标题、关键词、
+                卖点与完整英文商品描述。
                 </p>
             </div>
         </div>
@@ -269,51 +247,142 @@ with right:
 
         if not product_title or not product_info:
 
-            st.warning(
-                "请先填写中文商品标题和产品描述 / 属性。"
-            )
+            st.warning("请填写商品标题和产品描述 / 属性。")
 
         else:
 
-            st.success("页面运行成功！下一步我们接入 AI。")
+            prompt = f"""
+You are an experienced Southeast Asian e-commerce listing specialist.
 
-            st.subheader("English Product Title")
-            st.info(
-                "AI 接入后，这里会自动生成 Shopee / TikTok 英文标题。"
-            )
+Your task is to create a high-quality English product listing for:
 
-            st.subheader("Core Keywords")
-            st.write(
-                "Keyword 1 · Keyword 2 · Keyword 3 · Keyword 4"
-            )
+Platform: {platform}
+Market: Malaysia
+Listing style: {listing_style}
 
-            st.subheader("Selling Points")
-            st.write("""
-• Selling Point 1  
-• Selling Point 2  
-• Selling Point 3  
-• Selling Point 4
-""")
+SOURCE PRODUCT TITLE:
+{product_title}
 
-            st.subheader("Product Description")
-            st.write(
-                "AI 接入后，这里会根据你的中文商品资料自动生成完整英文详情。"
-            )
+SOURCE PRODUCT INFORMATION:
+{product_info}
 
-            st.subheader("Specifications")
-            st.write(
-                "Material / Size / Colour / Package / Usage"
-            )
+STORE TEMPLATE:
+{store_template}
 
-            st.subheader("Variations")
-            st.write(
-                "AI 将根据商品信息自动整理规格名称。"
-            )
+IMPORTANT RULES:
 
+1. Never invent product specifications, materials, dimensions,
+   functions, certifications, quantities or features.
 
-# =========================
-# 页脚
-# =========================
+2. If information is missing, omit it or mark it as
+   [Need Confirmation].
+
+3. Translate naturally rather than word-for-word.
+
+4. Use English search terminology that Malaysian shoppers
+   are likely to understand.
+
+5. Prioritize high-intent product keywords.
+
+6. Do not use misleading or exaggerated claims such as:
+   "No.1", "Best", "100% guaranteed", "perfect",
+   unless explicitly supported by the source information.
+
+7. Keep the title readable.
+   Do not spam or repeat keywords unnecessarily.
+
+8. Preserve important product attributes such as:
+   product type, material, size, colour, quantity,
+   application and compatibility.
+
+9. Do not fabricate information based on assumptions.
+
+OUTPUT EXACTLY USING THIS STRUCTURE:
+
+### English Product Title
+
+[Optimized English title]
+
+### Core Search Keywords
+
+- keyword
+- keyword
+- keyword
+- keyword
+- keyword
+
+### Selling Points
+
+- selling point
+- selling point
+- selling point
+- selling point
+- selling point
+
+### Product Description
+
+[Complete natural English description]
+
+### Specifications
+
+Product Name:
+Material:
+Colour:
+Size:
+Quantity:
+Application:
+
+Only include specifications supported by the source.
+
+### Variations
+
+[List recommended variation names based only on supplied information]
+
+### Information To Confirm
+
+[List any important missing or ambiguous information that should be
+confirmed before publishing.]
+
+### Store Message
+
+{store_template}
+"""
+
+            try:
+
+                with st.spinner(
+                    "AI 正在分析商品并生成 Listing..."
+                ):
+
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt
+                    )
+
+                st.success("Listing 生成完成 ✨")
+
+                st.markdown(
+                    '<div class="output-box">',
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(response.text)
+
+                st.markdown(
+                    '</div>',
+                    unsafe_allow_html=True
+                )
+
+            except Exception as e:
+
+                st.error("生成失败。")
+
+                st.code(str(e))
+
+                st.info(
+                    "如果出现错误，把这里显示的错误内容截图给我。"
+                )
+
 
 st.markdown("---")
 
