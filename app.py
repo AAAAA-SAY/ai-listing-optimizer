@@ -1,5 +1,6 @@
 import streamlit as st
 from google import genai
+from google.genai import types
 
 st.set_page_config(
     page_title="Shopee MY Listing Optimizer",
@@ -157,7 +158,7 @@ with left:
     )
 
     product_info = st.text_area(
-        "中文产品描述 / 属性 *",
+        "中文产品描述 / 属性 （可选）",
         placeholder="""例如：
 
 产品名称：
@@ -245,9 +246,9 @@ with right:
 
     else:
 
-        if not product_title or not product_info:
+        if not product_title and not product_info and not uploaded_images:
 
-            st.warning("请填写商品标题和产品描述 / 属性。")
+            st.warning("请至少填写商品标题、商品资料，或上传一张商品图片。")
 
         else:
 
@@ -268,9 +269,35 @@ SOURCE PRODUCT INFORMATION:
 
 STORE TEMPLATE:
 {store_template}
+IMAGE ANALYSIS RULES:
 
+The user may upload product images.
+
+Carefully analyze all uploaded product images.
+
+Use visible product information and readable text in the images to:
+- identify the product type
+- extract Chinese text
+- extract dimensions if explicitly shown
+- extract colours if clearly visible
+- extract quantities if explicitly shown
+- identify visible structures and features
+- identify usage scenarios
+- develop useful selling points based on observable features
+
+If the written product information is empty, build the listing primarily
+from the uploaded images.
+
+CRITICAL:
+Never guess material, dimensions, weight, load capacity, certification,
+compatibility, quantity or technical specifications from appearance alone.
+
+For example:
+If a product visually looks metallic but the image does not explicitly say
+"stainless steel", do not describe it as stainless steel.
+
+If information cannot be confirmed, add it under [Need Confirmation].
 IMPORTANT RULES:
-
 1. Never invent product specifications, materials, dimensions,
    functions, certifications, quantities or features.
 
@@ -354,9 +381,23 @@ confirmed before publishing.]
                     "AI 正在分析商品并生成 Listing..."
                 ):
 
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt
+                    contents = [prompt]
+
+if uploaded_images:
+    for uploaded_file in uploaded_images:
+        image_bytes = uploaded_file.getvalue()
+
+        contents.append(
+            types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=uploaded_file.type
+            )
+        )
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=contents
+)
                     )
 
                 st.success("Listing 生成完成 ✨")
